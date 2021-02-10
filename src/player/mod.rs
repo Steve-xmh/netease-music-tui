@@ -1,9 +1,9 @@
 extern crate rodio;
-extern crate tokio;
 extern crate tempfile;
+extern crate tokio;
 
-mod player;
 mod fetch;
+mod player;
 // mod sink;
 // mod range_set;
 mod track;
@@ -46,9 +46,7 @@ impl Nplayer {
         // let backend = find(None).unwrap();
         let mplayer = Player::new();
         debug!("init player");
-        Nplayer {
-            player: mplayer,
-        }
+        Nplayer { player: mplayer }
     }
 
     pub fn play_url(&mut self, url: &str) {
@@ -74,19 +72,15 @@ impl Nplayer {
 
     pub fn get_position(&self) -> Option<u64> {
         match self.player.current.clone() {
-            Some(current) => {
-                Some(current.elapsed().as_millis() as u64)
-            }
-            None => { None }
+            Some(current) => Some(current.elapsed().as_millis() as u64),
+            None => None,
         }
     }
 
     pub fn get_duration(&self) -> Option<u64> {
         match self.player.current.clone() {
-            Some(current) => {
-                Some(current.duration.as_millis() as u64)
-            }
-            None => { None }
+            Some(current) => Some(current.duration.as_millis() as u64),
+            None => None,
         }
     }
 
@@ -98,9 +92,9 @@ impl Nplayer {
     pub fn seek_backwards(&mut self) {
         // let song_progress_ms = self.get_position().unwrap();
         // let next_duration = if song_progress_ms < 3000 {
-            // 0
+        // 0
         // } else {
-            // song_progress_ms - 3000
+        // song_progress_ms - 3000
         // };
         // self.player.seek(ClockTime::from_mseconds(next_duration))
     }
@@ -109,7 +103,7 @@ impl Nplayer {
     pub fn seek(&mut self, offset: i32) {
         let next_duration = self.get_position().unwrap() as i32 + (offset * 1000);
         // self.player
-            // .seek(ClockTime::from_mseconds(next_duration as u64))
+        // .seek(ClockTime::from_mseconds(next_duration as u64))
     }
 
     #[allow(unused)]

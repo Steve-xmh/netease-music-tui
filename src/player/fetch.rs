@@ -1,12 +1,18 @@
-use std::io::prelude::*;
 use futures::channel::oneshot::Sender;
-use reqwest::header::{CACHE_CONTROL, PRAGMA, HeaderMap, UPGRADE_INSECURE_REQUESTS, ACCEPT, ACCEPT_ENCODING, USER_AGENT};
+use reqwest::header::{
+    HeaderMap, ACCEPT, ACCEPT_ENCODING, CACHE_CONTROL, PRAGMA, UPGRADE_INSECURE_REQUESTS,
+    USER_AGENT,
+};
 use reqwest::Method;
+use std::io::prelude::*;
 use tempfile::NamedTempFile;
 
 #[tokio::main]
-pub async fn fetch_data(url: &str, buffer: NamedTempFile, tx: Sender<String>) -> Result<(), failure::Error> {
-
+pub async fn fetch_data(
+    url: &str,
+    buffer: NamedTempFile,
+    tx: Sender<String>,
+) -> Result<(), failure::Error> {
     // debug!("start fetch_data");
     let mut buffer = buffer;
 
@@ -19,12 +25,15 @@ pub async fn fetch_data(url: &str, buffer: NamedTempFile, tx: Sender<String>) ->
     headers.insert(ACCEPT_ENCODING, "gzip,deflate,br".parse().unwrap());
     headers.insert(
         USER_AGENT,
-        "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:65.0) Gecko/20100101 Firefox/65.0".parse().unwrap(),
+        "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:65.0) Gecko/20100101 Firefox/65.0"
+            .parse()
+            .unwrap(),
     );
     let client = reqwest::Client::builder()
         // no need proxy but can add it in config
         // .proxy(reqwest::Proxy::all("socks5://127.0.0.1:3333").expect("proxy error"))
-        .build().expect("builder error");
+        .build()
+        .expect("builder error");
     let builder = client.request(Method::GET, url).headers(headers);
     let mut res = builder.send().await?;
 

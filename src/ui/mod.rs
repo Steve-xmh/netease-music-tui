@@ -5,10 +5,9 @@ use super::app::{ActiveBlock, App, RepeatState, RouteId, RECOMMEND_OPTIONS};
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
-use tui::widgets::{
-    canvas::Canvas, Block, Borders, Gauge, Paragraph, Row, SelectableList, Table, Tabs, Text,
-    Widget,
-};
+use tui::text::{Span, Spans, Text};
+use tui::widgets::{canvas::Canvas, Block, Borders, Gauge, Paragraph, Row, Table, Tabs};
+use tui::widgets::{List, ListItem, ListState, Wrap};
 use tui::Frame;
 use util::{
     create_artist_string, create_datetime_string, create_tag_string, display_track_progress,
@@ -73,27 +72,36 @@ where
     );
 
     let input: String = app.input.iter().collect();
-    Paragraph::new([Text::raw(&input)].iter())
-        .style(Style::default().fg(Color::Yellow))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Search")
-                .title_style(get_color(highlight_state))
-                .border_style(get_color(highlight_state)),
-        )
-        .render(f, chunks[0]);
+
+    f.render_widget(
+        Paragraph::new(input)
+            .style(Style::default().fg(Color::Yellow))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(Spans::from(Span::styled(
+                        "Search",
+                        get_color(highlight_state),
+                    )))
+                    .border_style(get_color(highlight_state)),
+            ),
+        chunks[0],
+    );
 
     let block = Block::default()
-        .title("Help")
+        .title(Spans::from(Span::styled(
+            "Help",
+            Style::default().fg(Color::Gray),
+        )))
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Gray))
-        .title_style(Style::default().fg(Color::Gray));
+        .border_style(Style::default().fg(Color::Gray));
 
-    Paragraph::new([Text::raw("Type ?")].iter())
-        .block(block)
-        .style(Style::default().fg(Color::Gray))
-        .render(f, chunks[1]);
+    f.render_widget(
+        Paragraph::new("Type ?")
+            .block(block)
+            .style(Style::default().fg(Color::Gray)),
+        chunks[1],
+    );
 }
 
 pub fn draw_routes<B>(f: &mut Frame<B>, app: &App, layout_chunk: Rect)
@@ -214,23 +222,27 @@ where
         None => (String::new(), String::new()),
     };
 
-    Block::default()
-        .borders(Borders::ALL)
-        .title(&title)
-        .title_style(get_color(highlight_state))
-        .border_style(get_color(highlight_state))
-        .render(f, layout_chunk);
+    f.render_widget(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(Spans::from(Span::styled(title, get_color(highlight_state))))
+            .border_style(get_color(highlight_state)),
+        layout_chunk,
+    );
 
-    Paragraph::new([Text::styled(artist_name, Style::default().fg(Color::White))].iter())
-        .style(Style::default().fg(Color::White))
-        .block(
-            Block::default().title(&track_name).title_style(
-                Style::default()
-                    .fg(Color::LightCyan)
-                    .modifier(Modifier::BOLD),
+    f.render_widget(
+        Paragraph::new(Span::styled(artist_name, Style::default().fg(Color::White)))
+            .style(Style::default().fg(Color::White))
+            .block(
+                Block::default().title(Spans::from(Span::styled(
+                    track_name,
+                    Style::default()
+                        .fg(Color::LightCyan)
+                        .add_modifier(Modifier::BOLD),
+                ))),
             ),
-        )
-        .render(f, chunks[0]);
+        chunks[0],
+    );
 
     let (perc, label) = match app.duration_ms {
         Some(duration_ms) => (
@@ -239,18 +251,19 @@ where
         ),
         None => (0.0_f64, " ".to_string()),
     };
-
-    Gauge::default()
-        .block(Block::default().title(""))
-        .style(
-            Style::default()
-                .fg(Color::LightCyan)
-                .bg(Color::Black)
-                .modifier(Modifier::ITALIC | Modifier::BOLD),
-        )
-        .percent(perc as u16)
-        .label(&label)
-        .render(f, chunks[1]);
+    f.render_widget(
+        Gauge::default()
+            .block(Block::default().title(""))
+            .style(
+                Style::default()
+                    .fg(Color::LightCyan)
+                    .bg(Color::Black)
+                    .add_modifier(Modifier::ITALIC | Modifier::BOLD),
+            )
+            .percent(perc as u16)
+            .label(label),
+        chunks[1],
+    );
 }
 
 pub fn draw_user_block<B>(f: &mut Frame<B>, app: &App, layout_chunk: Rect)
@@ -326,19 +339,19 @@ fn draw_selectable_list<B, S>(
     B: Backend,
     S: std::convert::AsRef<str>,
 {
-    SelectableList::default()
-        .block(
-            Block::default()
-                .title(title)
-                .borders(Borders::ALL)
-                .title_style(get_color(highlight_state))
-                .border_style(get_color(highlight_state)),
-        )
-        .items(items)
-        .style(Style::default().fg(Color::White))
-        .select(selected_index)
-        .highlight_style(get_color(highlight_state).modifier(Modifier::BOLD))
-        .render(f, layout_chunk);
+    let list =
+        List::new::<Vec<ListItem>>(items.iter().map(|v| ListItem::new(v.as_ref())).collect())
+            .block(
+                Block::default()
+                    .title(Spans::from(Span::styled(title, get_color(highlight_state))))
+                    .borders(Borders::ALL)
+                    .border_style(get_color(highlight_state)),
+            )
+            .style(Style::default().fg(Color::White))
+            .highlight_style(get_color(highlight_state).add_modifier(Modifier::BOLD));
+    let mut state = ListState::default();
+    state.select(selected_index);
+    f.render_stateful_widget(list, layout_chunk, &mut state)
 }
 
 // draw track table
@@ -413,7 +426,7 @@ fn draw_table<B>(
 ) where
     B: Backend,
 {
-    let selected_style = get_color(highlight_state).modifier(Modifier::BOLD);
+    let selected_style = get_color(highlight_state).add_modifier(Modifier::BOLD);
 
     // caculate index and row
     let interval = (layout_chunk.height / 2) as usize;
@@ -445,7 +458,9 @@ fn draw_table<B>(
             Some(track) => {
                 if item.id == track.id.unwrap().to_string() {
                     formatted_row[0] = format!("|> {}", &formatted_row[0]);
-                    style = Style::default().fg(Color::White).modifier(Modifier::BOLD);
+                    style = Style::default()
+                        .fg(Color::White)
+                        .add_modifier(Modifier::BOLD);
                 }
             }
             None => {}
@@ -457,25 +472,29 @@ fn draw_table<B>(
         }
 
         // Return row styled data
-        Row::StyledData(formatted_row.into_iter(), style)
+        Row::new(formatted_row).style(style)
     });
 
     let (title, header_columns) = table_layout;
 
-    let widths = header_columns.iter().map(|h| h.width).collect::<Vec<u16>>();
-
-    Table::new(header_columns.iter().map(|h| h.text), rows)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .style(Style::default().fg(Color::White))
-                .title(title)
-                .title_style(get_color(highlight_state))
-                .border_style(get_color(highlight_state)),
-        )
-        .style(Style::default().fg(Color::White))
-        .widths(&widths)
-        .render(f, layout_chunk);
+    let widths: Vec<Constraint> = header_columns
+        .iter()
+        .map(|h| Constraint::Length(h.width))
+        .collect();
+    f.render_widget(
+        Table::new(rows)
+            .header(Row::new(header_columns.iter().map(|h| h.text)))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .style(Style::default().fg(Color::White))
+                    .title(Spans::from(Span::styled(title, get_color(highlight_state))))
+                    .border_style(get_color(highlight_state)),
+            )
+            .style(Style::default().fg(Color::White))
+            .widths(&widths),
+        layout_chunk,
+    );
 }
 
 fn draw_home<B>(f: &mut Frame<B>, app: &App, layout_chunk: Rect)
@@ -494,14 +513,15 @@ where
         current_route.hovered_block == ActiveBlock::Home,
     );
 
-    Block::default()
-        .title("Welcome!")
-        .borders(Borders::ALL)
-        .title_style(get_color(highlight_state))
-        .border_style(get_color(highlight_state))
-        .render(f, layout_chunk);
+    f.render_widget(
+        Block::default()
+            .title(Spans::from(Span::styled("Welcome!", get_color(highlight_state))))
+            .borders(Borders::ALL)
+            .border_style(get_color(highlight_state)),
+        layout_chunk,
+    );
 
-    let top_text = vec![Text::styled(
+    let top_text = Text::styled(
         "
                  __
   ____    ____ _/  |_   ____  _____     ______  ____
@@ -524,14 +544,17 @@ _______  __ __  _______/  |_          _/  |_  __ __ |__|
             ",
         Style::default()
             .fg(Color::LightCyan)
-            .modifier(Modifier::BOLD),
-    )];
+            .add_modifier(Modifier::BOLD),
+    );
 
     // Contains the banner
-    Paragraph::new(top_text.iter())
-        .style(Style::default().fg(Color::White))
-        .block(Block::default())
-        .render(f, chunks[0]);
+    f.render_widget(
+        Paragraph::new(top_text)
+            .alignment(Alignment::Center)
+            .style(Style::default().fg(Color::White))
+            .block(Block::default()),
+        chunks[0],
+    );
 
     // Canvas::default()
     // .block(
@@ -557,18 +580,17 @@ where
         current_route.hovered_block == ActiveBlock::PersonalFm,
     );
     let display_block = Block::default()
-        .title(&"PERSONAL FM")
+        .title(Spans::from(Span::styled("PERSONAL FM", get_color(highlight_state))))
         .borders(Borders::ALL)
-        .title_style(get_color(highlight_state))
         .border_style(get_color(highlight_state));
 
-    let text = vec![Text::raw("Your Personal FM")];
-
-    Paragraph::new(text.iter())
-        .style(Style::default().fg(Color::White))
-        .block(display_block)
-        .wrap(true)
-        .render(f, layout_chunk);
+    f.render_widget(
+        Paragraph::new("Your Personal FM")
+            .style(Style::default().fg(Color::White))
+            .block(display_block)
+            .wrap(Wrap { trim: true }),
+        layout_chunk,
+    );
 }
 
 pub fn draw_search_results<B>(f: &mut Frame<B>, app: &App, layout_chunk: Rect)
@@ -638,19 +660,25 @@ where
             None => vec![],
         };
 
-        Tabs::default()
+        f.render_widget(
+            Tabs::new(
+                app.tabs
+                    .titles
+                    .iter()
+                    .map(|v| Spans::from(v.as_str()))
+                    .collect(),
+            )
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title("Search Result")
-                    .title_style(get_color(highlight_state))
+                    .title(Spans::from(Span::styled("Search Result", get_color(highlight_state))))
                     .border_style(get_color(highlight_state)),
             )
-            .titles(&app.tabs.titles)
             .select(app.tabs.index)
             .style(Style::default().fg(Color::Cyan))
-            .highlight_style(Style::default().fg(Color::Yellow))
-            .render(f, chunks[0]);
+            .highlight_style(Style::default().fg(Color::Yellow)),
+            chunks[0],
+        );
 
         match app.tabs.index {
             0 => draw_selectable_list(
@@ -711,70 +739,76 @@ where
 
     let white = Style::default().fg(Color::White);
     let gray = Style::default().fg(Color::White);
-    let header = ["Description", "Event", "Context"];
+    let header = vec!["Description", "Event", "Context"];
 
-    let help_docs = vec![
-        vec!["Increase volume", "+", "General"],
-        vec!["Decrease volume", "-", "General"],
-        vec!["Skip to next track", "n", "General"],
-        vec!["Skip to previous track", "p", "General"],
-        vec!["Toggle repeat mode", "r", "General"],
-        vec!["Move selection left", "h | <Left Arrow Key> ", "General"],
-        vec!["Move selection down", "j | <Down Arrow Key> ", "General"],
-        vec!["Move selection up", "k | <Up Arrow Key> ", "General"],
-        vec!["Move selection right", "l | <Right Arrow Key> ", "General"],
-        vec!["Jump to currently playing album", "a", "General"],
-        vec!["Enter Search", "/", "General"],
-        vec!["Pause/Resume playback", "<Space>", "General"],
-        vec!["Fullsize playbar", "f", "General"],
-        vec![
+    let help_doc: Vec<[&str; 3]> = vec![
+        ["Increase volume", "+", "General"],
+        ["Decrease volume", "-", "General"],
+        ["Skip to next track", "n", "General"],
+        ["Skip to previous track", "p", "General"],
+        ["Toggle repeat mode", "r", "General"],
+        ["Move selection left", "h | <Left Arrow Key> ", "General"],
+        ["Move selection down", "j | <Down Arrow Key> ", "General"],
+        ["Move selection up", "k | <Up Arrow Key> ", "General"],
+        ["Move selection right", "l | <Right Arrow Key> ", "General"],
+        ["Jump to currently playing album", "a", "General"],
+        ["Enter Search", "/", "General"],
+        ["Pause/Resume playback", "<Space>", "General"],
+        ["Fullsize playbar", "f", "General"],
+        [
             "Go back or exit when nowhere left to back to",
             "q",
             "General",
         ],
-        vec!["Enter hover mode", "<Esc>", "General"],
-        vec!["Enter active mode", "<Enter>", "General"],
-        vec!["Like current playing track", "<Ctrl+y>", "General"],
-        vec!["Dislike current playing track", "<Ctrl+d>", "General"],
-        vec!["move track to trash", "<Ctrl+t>", "FM block"],
-        vec!["Delete entire input", "<Ctrl+u>", "Search input"],
-        vec!["Search with input text", "<Enter>", "Search input"],
-        vec!["Jump to start of input", "<Ctrl+a>", "Search input"],
-        vec!["Jump to end of input", "<Ctrl+e>", "Search input"],
-        vec![
+        ["Enter hover mode", "<Esc>", "General"],
+        ["Enter active mode", "<Enter>", "General"],
+        ["Like current playing track", "<Ctrl+y>", "General"],
+        ["Dislike current playing track", "<Ctrl+d>", "General"],
+        ["move track to trash", "<Ctrl+t>", "FM block"],
+        ["Delete entire input", "<Ctrl+u>", "Search input"],
+        ["Search with input text", "<Enter>", "Search input"],
+        ["Jump to start of input", "<Ctrl+a>", "Search input"],
+        ["Jump to end of input", "<Ctrl+e>", "Search input"],
+        [
             "Subscribe current hover playlist",
             "<Alt+s>",
             "Playlist block",
         ],
-        vec![
+        [
             "Unsubscribe current hover playlist",
             "<Alt+d>",
             "Playlist block",
         ],
-        vec!["Jump to next page", "<Ctrl+f>", "Search result | top list"],
-        vec![
+        ["Jump to next page", "<Ctrl+f>", "Search result | top list"],
+        [
             "Jump to previous page",
             "<Ctrl+b>",
             "Search result | top list",
         ],
     ];
 
-    let rows = help_docs
+    let rows = help_doc
         .iter()
-        .map(|item| Row::StyledData(item.iter(), gray));
+        .map(|item: &[&str; 3]| Row::new(vec![Spans::from(item[0]), Spans::from(item[1]), Spans::from(item[2])]).style(gray));
 
-    Table::new(header.iter(), rows)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .style(white)
-                .title("Help (press <Esc> to go back)")
-                .title_style(gray)
-                .border_style(gray),
-        )
-        .style(Style::default().fg(Color::White))
-        .widths(&[60, 30, 20])
-        .render(f, chunks[0]);
+    f.render_widget(
+        Table::new(rows)
+            .header(Row::new(header))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .style(white)
+                    .title(Spans::from(Span::styled("Help (press <Esc> to go back)", gray)))
+                    .border_style(gray),
+            )
+            .style(Style::default().fg(Color::White))
+            .widths(&[
+                Constraint::Length(60),
+                Constraint::Length(30),
+                Constraint::Length(20),
+            ]),
+        chunks[0],
+    );
 }
 
 pub fn draw_playing_detail<B>(f: &mut Frame<B>, app: &App, layout_chunk: Rect)
@@ -793,20 +827,21 @@ where
         // .margin(2)
         .split(layout_chunk);
 
-    Canvas::default()
-        .block(
-            Block::default()
-                .borders(Borders::LEFT | Borders::TOP | Borders::BOTTOM)
-                .title("Playing")
-                .title_style(get_color(highlight_state))
-                .border_style(get_color(highlight_state)),
-        )
-        .paint(|ctx| {
-            ctx.draw(&app.playing_circle);
-        })
-        .x_bounds([-90.0, 90.0])
-        .y_bounds([-90.0, 90.0])
-        .render(f, chunks[0]);
+    f.render_widget(
+        Canvas::default()
+            .block(
+                Block::default()
+                    .borders(Borders::LEFT | Borders::TOP | Borders::BOTTOM)
+                    .title(Spans::from(Span::styled("Playing", get_color(highlight_state))))
+                    .border_style(get_color(highlight_state)),
+            )
+            .paint(|ctx| {
+                ctx.draw(&app.playing_circle);
+            })
+            .x_bounds([90.0, 90.0])
+            .y_bounds([90.0, 90.0]),
+        chunks[0],
+    );
 
     let lyric_items = match &app.lyric {
         Some(l) => l.iter().map(|item| vec![item.value.to_owned()]).collect(),
@@ -838,29 +873,32 @@ where
         width: get_percentage_width(layout_chunk.width, 0.5),
     }];
 
-    let selected_style = get_color(highlight_state).modifier(Modifier::BOLD);
+    let selected_style = get_color(highlight_state).add_modifier(Modifier::BOLD);
     let rows = row_items.iter().enumerate().map(|(i, item)| {
         let mut style = Style::default().fg(Color::White); // default styling
         if i == selected_index - margin {
             style = selected_style;
         }
         // Return row styled data
-        Row::StyledData(item.into_iter(), style)
+        Row::new(item.clone()).style(style)
     });
 
-    let widths = header.iter().map(|h| h.width).collect::<Vec<u16>>();
+    let widths: Vec<Constraint> = header.iter().map(|h| Constraint::Length(h.width)).collect();
 
-    Table::new(header.iter().map(|h| h.text), rows)
-        .block(
-            Block::default()
-                .borders(Borders::RIGHT | Borders::TOP | Borders::BOTTOM)
-                .style(Style::default().fg(Color::White))
-                .title_style(get_color(highlight_state))
-                .border_style(get_color(highlight_state)),
-        )
-        .style(Style::default().fg(Color::White))
-        .widths(&widths)
-        .render(f, chunks[1]);
+    f.render_widget(
+        Table::new(rows)
+            .header(Row::new(header.iter().map(|h| h.text)))
+            .block(
+                Block::default()
+                    .title(Spans::from(Span::styled("", get_color(highlight_state))))
+                    .borders(Borders::RIGHT | Borders::TOP | Borders::BOTTOM)
+                    .style(Style::default().fg(Color::White))
+                    .border_style(get_color(highlight_state)),
+            )
+            .style(Style::default().fg(Color::White))
+            .widths(&widths),
+        chunks[1],
+    );
 }
 
 // list ui struct
@@ -1338,22 +1376,29 @@ where
         .split(layout_chunk);
 
     let playing_text = vec![
-        Text::raw("Api response: "),
-        Text::styled(&app.error_msg, Style::default().fg(Color::LightRed)),
-        Text::styled("\nPress `e` to return", Style::default().fg(Color::Gray)),
+        Spans::from(Span::raw("Api response: ")),
+        Spans::from(Span::styled(
+            &app.error_msg,
+            Style::default().fg(Color::LightRed),
+        )),
+        Spans::from(Span::styled(
+            "\nPress `e` to return",
+            Style::default().fg(Color::Gray),
+        )),
     ];
 
-    Paragraph::new(playing_text.iter())
-        .wrap(true)
-        .style(Style::default().fg(Color::White))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Error Page")
-                .title_style(Style::default().fg(Color::Red))
-                .border_style(Style::default().fg(Color::Red)),
-        )
-        .render(f, chunks[0]);
+    f.render_widget(
+        Paragraph::new(playing_text)
+            .wrap(Wrap { trim: true })
+            .style(Style::default().fg(Color::White))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(Spans::from(Span::styled("Error Page", Style::default().fg(Color::Red))))
+                    .border_style(Style::default().fg(Color::Red)),
+            ),
+        chunks[0],
+    );
 }
 
 pub fn draw_msg<B>(f: &mut Frame<B>, app: &mut App)
@@ -1383,16 +1428,18 @@ where
         )
         .split(chunks[1]);
 
-    let msg = vec![Text::styled(&app.msg, Style::default().fg(Color::Cyan))];
+    let msg = Span::styled(&app.msg, Style::default().fg(Color::Cyan));
 
-    Paragraph::new(msg.iter())
-        .wrap(true)
-        .alignment(Alignment::Center)
-        .style(Style::default().fg(Color::White))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(Style::default().fg(Color::Cyan)),
-        )
-        .render(f, child_chunks[1]);
+    f.render_widget(
+        Paragraph::new(msg)
+            .wrap(Wrap { trim: true })
+            .alignment(Alignment::Center)
+            .style(Style::default().fg(Color::White))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(Color::Cyan)),
+            ),
+        child_chunks[1],
+    );
 }

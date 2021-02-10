@@ -1,17 +1,18 @@
 use serde_json;
 // use serde_json::{Value, json};
-use serde_derive::{Deserialize, Serialize};
 use serde::de::Deserialize;
+use serde_derive::{Deserialize, Serialize};
 
+use reqwest::blocking::Client;
 use reqwest::header::{
     HeaderMap, ACCEPT, ACCEPT_ENCODING, CONTENT_TYPE, COOKIE, HOST, REFERER, USER_AGENT,
 };
-use reqwest::blocking::Client;
 use reqwest::Method;
 use reqwest::StatusCode;
 
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::env::temp_dir;
 use std::fmt;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -24,7 +25,8 @@ use super::model::artist::{Artist, TopArtistRes};
 use super::model::dj::{DjProgram, DjRadio, ProgramDetailRes, ProgramsRes, SubDjRadioRes};
 use super::model::lyric::{Lyric, LyricRes};
 use super::model::playlist::{
-    PersonalFmRes, Playlist, PlaylistDetail, PlaylistDetailRes, PlaylistRes, TopPlaylistRes, Track, UidPlaylistRes
+    PersonalFmRes, Playlist, PlaylistDetail, PlaylistDetailRes, PlaylistRes, TopPlaylistRes, Track,
+    UidPlaylistRes,
 };
 use super::model::search::{
     SearchAlbumResult, SearchAlbums, SearchArtistResult, SearchArtists, SearchDjRadios,
@@ -86,11 +88,23 @@ pub struct CloudMusic {
     pub cookie_path: String,
 }
 
+#[cfg(not(target_os = "windows"))]
+fn get_cookie_path() -> String {
+    "/tmp/ncmt_cookie".into()
+}
+
+#[cfg(target_os = "windows")]
+fn get_cookie_path() -> String {
+    let mut tmp = temp_dir();
+    tmp.push("ncmt_cookie");
+    tmp.as_os_str().to_str().unwrap().to_string()
+}
+
 impl CloudMusic {
     pub fn default() -> CloudMusic {
         CloudMusic {
             prefix: "https://music.163.com".to_owned(),
-            cookie_path: "/tmp/ncmt_cookie".to_owned(),
+            cookie_path: get_cookie_path(),
         }
     }
 

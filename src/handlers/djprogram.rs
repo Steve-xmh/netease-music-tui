@@ -2,9 +2,9 @@ use super::super::app::{App, TrackTable};
 use super::super::model::artist::Artist;
 use super::super::model::playlist::Track;
 use super::common_events;
-use termion::event::Key;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-pub fn handler(key: Key, app: &mut App) {
+pub fn handler(key: KeyEvent, app: &mut App) {
     match key {
         k if common_events::left_event(k) => common_events::handle_left_event(app),
         k if common_events::down_event(k) => {
@@ -25,7 +25,10 @@ pub fn handler(key: Key, app: &mut App) {
                 djprogram_list.selected_index = next_index;
             }
         }
-        Key::Char('\n') => {
+        KeyEvent {
+            code: KeyCode::Enter,
+            modifiers: KeyModifiers::NONE,
+        } => {
             if let Some(djprogram_list) = &app.program_list.clone() {
                 // convert djprogram to tracks
                 let track_list = djprogram_list

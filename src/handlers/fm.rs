@@ -1,10 +1,13 @@
 use super::super::app::App;
-use termion::event::Key;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 // use super::common_events;
 
-pub fn handler(key: Key, app: &mut App) {
+pub fn handler(key: KeyEvent, app: &mut App) {
     match key {
-        Key::Ctrl('t') => {
+        KeyEvent {
+            code: KeyCode::Char('t'),
+            modifiers: KeyModifiers::CONTROL,
+        } => {
             app.fm_trash();
         }
         _ => {}

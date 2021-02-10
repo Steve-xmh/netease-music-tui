@@ -1,10 +1,13 @@
 use super::super::app::{ActiveBlock, App, RouteId, TrackTable};
 use super::common_events;
-use termion::event::Key;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-pub fn handler(key: Key, app: &mut App) {
+pub fn handler(key: KeyEvent, app: &mut App) {
     match key {
-        Key::Esc => {
+        KeyEvent {
+            code: KeyCode::Esc,
+            modifiers: KeyModifiers::NONE,
+        } => {
             app.set_current_route_state(Some(ActiveBlock::Empty), Some(ActiveBlock::SearchResult));
         }
         k if common_events::down_event(k) => {
@@ -87,7 +90,10 @@ pub fn handler(key: Key, app: &mut App) {
             };
             app.tabs.index = next;
         }
-        Key::Char('\n') => {
+        KeyEvent {
+            code: KeyCode::Enter,
+            modifiers: KeyModifiers::NONE,
+        } => {
             if app.tabs.index == 0 {
                 match &app.search_results.tracks.clone() {
                     Some(tracks) => {
@@ -164,7 +170,10 @@ pub fn handler(key: Key, app: &mut App) {
                 }
             }
         }
-        Key::Ctrl('f') => {
+        KeyEvent {
+            code: KeyCode::Enter,
+            modifiers: KeyModifiers::CONTROL,
+        } => {
             let limit = (app.block_height - 5) as i32;
             let input: String = app.input.iter().collect();
             if app.tabs.index == 0 {
@@ -252,7 +261,10 @@ pub fn handler(key: Key, app: &mut App) {
                 }
             }
         }
-        Key::Ctrl('b') => {
+        KeyEvent {
+            code: KeyCode::Char('b'),
+            modifiers: KeyModifiers::CONTROL,
+        } => {
             let limit = (app.block_height - 5) as i32;
             let input: String = app.input.iter().collect();
             if app.tabs.index == 0 {

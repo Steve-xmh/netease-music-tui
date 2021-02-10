@@ -1,8 +1,8 @@
 use super::super::app::{Action, App};
 use super::common_events;
-use termion::event::Key;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-pub fn handler(key: Key, app: &mut App) {
+pub fn handler(key: KeyEvent, app: &mut App) {
     match key {
         k if common_events::left_event(k) => common_events::handle_left_event(app),
         k if common_events::down_event(k) => {
@@ -23,7 +23,11 @@ pub fn handler(key: Key, app: &mut App) {
                 playlist.selected_index = next_index;
             }
         }
-        Key::Char('\n') => {
+        KeyEvent {
+            code: KeyCode::Char('\n'),
+
+            modifiers: KeyModifiers::NONE,
+        } => {
             if let Some(playlists) = &app.playlist_list {
                 if let Some(playlist) = playlists.playlists.get(playlists.selected_index.to_owned())
                 {
@@ -32,7 +36,10 @@ pub fn handler(key: Key, app: &mut App) {
                 }
             };
         }
-        Key::Ctrl('f') => {
+        KeyEvent {
+            code: KeyCode::Char('f'),
+            modifiers: KeyModifiers::CONTROL,
+        } => {
             let limit = (app.block_height - 4) as i32;
             if let Some(playlists) = &app.playlist_list {
                 let page = playlists.selected_page;
@@ -40,7 +47,10 @@ pub fn handler(key: Key, app: &mut App) {
                 app.get_top_playlist(limit, next_page)
             };
         }
-        Key::Ctrl('b') => {
+        KeyEvent {
+            code: KeyCode::Char('b'),
+            modifiers: KeyModifiers::CONTROL,
+        } => {
             let limit = (app.block_height - 4) as i32;
             if let Some(playlists) = &app.playlist_list {
                 let page = playlists.selected_page;
@@ -48,7 +58,10 @@ pub fn handler(key: Key, app: &mut App) {
                 app.get_top_playlist(limit, next_page)
             };
         }
-        Key::Alt('s') => match &app.playlist_list.clone() {
+        KeyEvent {
+            code: KeyCode::Char('s'),
+            modifiers: KeyModifiers::ALT,
+        } => match &app.playlist_list.clone() {
             Some(playlists) => {
                 if let Some(playlist) = playlists.playlists.get(playlists.selected_index.to_owned())
                 {
@@ -57,7 +70,10 @@ pub fn handler(key: Key, app: &mut App) {
             }
             None => {}
         },
-        Key::Alt('d') => match &app.playlist_list.clone() {
+        KeyEvent {
+            code: KeyCode::Char('d'),
+            modifiers: KeyModifiers::ALT,
+        } => match &app.playlist_list.clone() {
             Some(playlists) => {
                 if let Some(playlist) = playlists.playlists.get(playlists.selected_index.to_owned())
                 {

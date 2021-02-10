@@ -1,8 +1,8 @@
 use super::super::app::{ActiveBlock, App, RouteId, RECOMMEND_OPTIONS};
 use super::common_events;
-use termion::event::Key;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-pub fn handler(key: Key, app: &mut App) {
+pub fn handler(key: KeyEvent, app: &mut App) {
     match key {
         k if common_events::right_event(k) => common_events::handle_right_event(app),
         k if common_events::down_event(k) => {
@@ -23,7 +23,10 @@ pub fn handler(key: Key, app: &mut App) {
         // you can go Discover music
         // you can go Personal FM
         // you can go you playlists
-        Key::Char('\n') => {
+        KeyEvent {
+            code: KeyCode::Enter,
+            modifiers: KeyModifiers::NONE,
+        } => {
             let limit = (app.block_height - 4) as i32;
             match app.recommend.selected_index {
                 0 => app.push_navigation_stack(RouteId::MyPlaylists, ActiveBlock::MyPlaylists),

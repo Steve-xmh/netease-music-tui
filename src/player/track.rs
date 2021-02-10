@@ -8,7 +8,6 @@ pub enum Status {
     Stopped(::std::time::Duration),
 }
 
-
 impl Status {
     // Time elapsed
     pub fn elapsed(self) -> ::std::time::Duration {
@@ -78,7 +77,7 @@ impl Track {
         &self.file
     }
 
-    pub fn load(file: PathBuf) -> Result<Self, failure::Error > {
+    pub fn load(file: PathBuf) -> Result<Self, failure::Error> {
         let duration = ::mp3_duration::from_path(&file).unwrap();
         Ok(Self {
             duration,

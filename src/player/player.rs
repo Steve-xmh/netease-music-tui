@@ -1,28 +1,28 @@
+use super::fetch::fetch_data;
+use super::track::Track;
 use futures::channel::oneshot;
 use std::path::PathBuf;
 use tempfile::NamedTempFile;
-use super::fetch::fetch_data;
-use super::track::Track;
 
-use std::thread;
 use std::fs;
+use std::thread;
 
 #[allow(unused)]
 pub enum PlayerState {
     Stopped,
     Paused {
         // start_of_track: oneshot::Sender<String>,
-        // end_of_track: oneshot::Sender<()>,
-        // normalisation_factor: f32,
-        // stream_loader_controller: StreamLoaderController,
-        // bytes_per_second: usize,
+    // end_of_track: oneshot::Sender<()>,
+    // normalisation_factor: f32,
+    // stream_loader_controller: StreamLoaderController,
+    // bytes_per_second: usize,
     },
     Playing {
         // start_of_track: oneshot::Sender<String>,
-        // end_of_track: oneshot::Sender<()>,
-        // normalisation_factor: f32,
-        // // stream_loader_controller: StreamLoaderController,
-        // bytes_per_second: usize,
+    // end_of_track: oneshot::Sender<()>,
+    // normalisation_factor: f32,
+    // // stream_loader_controller: StreamLoaderController,
+    // bytes_per_second: usize,
     },
     EndOfTrack {
         url: String,
@@ -41,11 +41,10 @@ pub struct Player {
 // player
 impl Player {
     // new player
-    pub fn new<>(
-        // audio_filter: Option<Box<AudioFilter + Send>>,
+    pub fn new(// audio_filter: Option<Box<AudioFilter + Send>>,
         // sink_builder: F,
     ) -> Player
-    // where
+// where
         // F: FnOnce() -> Box<dyn Sink> + Send + 'static,
     {
         let endpoint =
@@ -62,14 +61,10 @@ impl Player {
 
     // run command
     // fn command(&self, cmd: PlayerCommand) {
-        // self.commands.as_ref().expect("commands error").send(cmd).expect("send error");
+    // self.commands.as_ref().expect("commands error").send(cmd).expect("send error");
     // }
 
-    pub fn load(
-        &mut self,
-        url: String,
-        start_playing: bool,
-    ) {
+    pub fn load(&mut self, url: String, start_playing: bool) {
         match &self.current {
             Some(track) => {
                 fs::remove_file(track.file()).ok();
@@ -90,24 +85,22 @@ impl Player {
         if start_playing {
             loop {
                 match prx.try_recv() {
-                    Ok(p) => {
-                        match p {
-                            Some(_) => {
-                                match Track::load(pathbuf) {
-                                    Ok(track) => {
-                                        let mut track = track;
-                                        self.load_track(track.clone(), start_playing);
-                                        track.resume();
-                                        self.current = Some(track);
-                                        self.state = PlayerState::Playing{};
-                                    }
-                                    Err(_) => {}
+                    Ok(p) => match p {
+                        Some(_) => {
+                            match Track::load(pathbuf) {
+                                Ok(track) => {
+                                    let mut track = track;
+                                    self.load_track(track.clone(), start_playing);
+                                    track.resume();
+                                    self.current = Some(track);
+                                    self.state = PlayerState::Playing {};
                                 }
-                                break;
+                                Err(_) => {}
                             }
-                            None => {}
+                            break;
                         }
-                    }
+                        None => {}
+                    },
                     Err(_) => {}
                 }
             }
@@ -134,7 +127,7 @@ impl Player {
 
     pub fn play(&mut self) {
         self.sink.play();
-        self.state = PlayerState::Playing{};
+        self.state = PlayerState::Playing {};
         self.current = self.current.take().and_then(|mut s| {
             s.resume();
             Some(s)
@@ -143,7 +136,7 @@ impl Player {
 
     pub fn pause(&mut self) {
         self.sink.pause();
-        self.state = PlayerState::Paused{};
+        self.state = PlayerState::Paused {};
         self.current = self.current.take().and_then(|mut s| {
             s.stop();
             Some(s)

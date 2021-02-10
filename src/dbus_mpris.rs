@@ -8,21 +8,21 @@
 extern crate dbus;
 use super::app::App;
 #[cfg(feature = "dbus_mpris")]
-use super::model::playlist::Track;
-#[cfg(feature = "dbus_mpris")]
 use super::app::RepeatState;
 #[cfg(feature = "dbus_mpris")]
 use super::handlers::TrackState;
 #[cfg(feature = "dbus_mpris")]
+use super::model::playlist::Track;
+#[cfg(feature = "dbus_mpris")]
 use super::player::MetaInfo;
 use super::player::PlayerCommand;
 #[cfg(feature = "dbus_mpris")]
-use dbus::{
-    blocking::Connection,
-    arg::{RefArg, Variant, messageitem::MessageItem},
-};
-#[cfg(feature = "dbus_mpris")]
 use dbus::tree::{Access, Factory};
+#[cfg(feature = "dbus_mpris")]
+use dbus::{
+    arg::{messageitem::MessageItem, RefArg, Variant},
+    blocking::Connection,
+};
 use std::error::Error;
 use std::sync::mpsc;
 use std::sync::mpsc::Sender;
@@ -409,27 +409,39 @@ pub fn dbus_mpris_server(tx: Sender<PlayerCommand>) -> Result<(), Box<dyn Error>
                         let mut m = HashMap::new();
                         match serde_json::from_str::<Track>(&r) {
                             Ok(current_playing) => {
-                                m.insert("mpris:trackid".to_string(), Variant(Box::new(
-                                    MessageItem::Int64(
-                                       current_playing.id.unwrap().to_owned()
-                                    )) as Box<dyn RefArg>));
-                                m.insert("mpris:length".to_string(), Variant(Box::new(
-                                    MessageItem::Int64(
-                                        i64::from(100) * 1000
-                                    )) as Box<dyn RefArg>));
-                                m.insert("xesam:title".to_string(), Variant(Box::new(
-                                    MessageItem::Str(
-                                        current_playing.name.unwrap().to_owned()
-                                )) as Box<dyn RefArg>));
-                                m.insert("xesam:album".to_string(), Variant(Box::new(
-                                    MessageItem::Str(
-                                        current_playing.album.unwrap().name.unwrap().to_owned()
-                                )) as Box<dyn RefArg>));
-                                m.insert("xesam:artist".to_string(), Variant(Box::new(
-                                    MessageItem::Str(
-                                        current_playing.artists.unwrap()[0].name.to_owned()
-                                )) as Box<dyn RefArg>));
-
+                                m.insert(
+                                    "mpris:trackid".to_string(),
+                                    Variant(Box::new(MessageItem::Int64(
+                                        current_playing.id.unwrap().to_owned(),
+                                    ))
+                                        as Box<dyn RefArg>),
+                                );
+                                m.insert(
+                                    "mpris:length".to_string(),
+                                    Variant(Box::new(MessageItem::Int64(i64::from(100) * 1000))
+                                        as Box<dyn RefArg>),
+                                );
+                                m.insert(
+                                    "xesam:title".to_string(),
+                                    Variant(Box::new(MessageItem::Str(
+                                        current_playing.name.unwrap().to_owned(),
+                                    ))
+                                        as Box<dyn RefArg>),
+                                );
+                                m.insert(
+                                    "xesam:album".to_string(),
+                                    Variant(Box::new(MessageItem::Str(
+                                        current_playing.album.unwrap().name.unwrap().to_owned(),
+                                    ))
+                                        as Box<dyn RefArg>),
+                                );
+                                m.insert(
+                                    "xesam:artist".to_string(),
+                                    Variant(Box::new(MessageItem::Str(
+                                        current_playing.artists.unwrap()[0].name.to_owned(),
+                                    ))
+                                        as Box<dyn RefArg>),
+                                );
                             }
                             Err(_) => {}
                         }
@@ -444,51 +456,49 @@ pub fn dbus_mpris_server(tx: Sender<PlayerCommand>) -> Result<(), Box<dyn Error>
     };
 
     // We create a tree with one object path inside and make that path introspectable.
-    let tree = f
-        .tree(())
-        .add(
-            f.object_path("/org/mpris/MediaPlayer2", ())
-                .introspectable()
-                .add(
-                    f.interface("org.mpris.MediaPlayer2", ())
-                        .add_m(method_raise)
-                        .add_m(method_quit)
-                        .add_p(property_can_quit)
-                        .add_p(property_can_raise)
-                        .add_p(property_can_fullscreen)
-                        .add_p(property_has_tracklist)
-                        .add_p(property_identity)
-                        .add_p(property_supported_uri_schemes)
-                        .add_p(property_mimetypes),
-                )
-                .add(
-                    f.interface("org.mpris.MediaPlayer2.Player", ())
-                        .add_m(method_next)
-                        .add_m(method_previous)
-                        .add_m(method_pause)
-                        .add_m(method_play_pause)
-                        .add_m(method_stop)
-                        .add_m(method_play)
-                        .add_m(method_seek)
-                        .add_m(method_set_position)
-                        .add_m(method_open_uri)
-                        .add_p(property_rate)
-                        .add_p(property_max_rate)
-                        .add_p(property_min_rate)
-                        .add_p(property_can_play)
-                        .add_p(property_can_pause)
-                        .add_p(property_can_seek)
-                        .add_p(property_can_control)
-                        .add_p(property_can_go_next)
-                        .add_p(property_can_go_previous)
-                        .add_p(property_loop_status)
-                        .add_p(property_playback_status)
-                        .add_p(property_shuffle)
-                        .add_p(property_position)
-                        .add_p(property_metadata),
-                ),
-        );
-        // .add(f.object_path("/", ()).introspectable());
+    let tree = f.tree(()).add(
+        f.object_path("/org/mpris/MediaPlayer2", ())
+            .introspectable()
+            .add(
+                f.interface("org.mpris.MediaPlayer2", ())
+                    .add_m(method_raise)
+                    .add_m(method_quit)
+                    .add_p(property_can_quit)
+                    .add_p(property_can_raise)
+                    .add_p(property_can_fullscreen)
+                    .add_p(property_has_tracklist)
+                    .add_p(property_identity)
+                    .add_p(property_supported_uri_schemes)
+                    .add_p(property_mimetypes),
+            )
+            .add(
+                f.interface("org.mpris.MediaPlayer2.Player", ())
+                    .add_m(method_next)
+                    .add_m(method_previous)
+                    .add_m(method_pause)
+                    .add_m(method_play_pause)
+                    .add_m(method_stop)
+                    .add_m(method_play)
+                    .add_m(method_seek)
+                    .add_m(method_set_position)
+                    .add_m(method_open_uri)
+                    .add_p(property_rate)
+                    .add_p(property_max_rate)
+                    .add_p(property_min_rate)
+                    .add_p(property_can_play)
+                    .add_p(property_can_pause)
+                    .add_p(property_can_seek)
+                    .add_p(property_can_control)
+                    .add_p(property_can_go_next)
+                    .add_p(property_can_go_previous)
+                    .add_p(property_loop_status)
+                    .add_p(property_playback_status)
+                    .add_p(property_shuffle)
+                    .add_p(property_position)
+                    .add_p(property_metadata),
+            ),
+    );
+    // .add(f.object_path("/", ()).introspectable());
 
     // We add the tree to the connection so that incoming method calls will be handled.
     tree.start_receive(&c);

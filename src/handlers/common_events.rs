@@ -1,31 +1,51 @@
 use super::super::app::{ActiveBlock, App, RouteId};
-use termion::event::Key;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-pub fn down_event(key: Key) -> bool {
-    match key {
-        Key::Down | Key::Char('j') | Key::Ctrl('n') => true,
-        _ => false,
+pub fn down_event(key: KeyEvent) -> bool {
+    if key.modifiers == KeyModifiers::NONE {
+        match key.code {
+            KeyCode::Down | KeyCode::Char('j') => true,
+            _ => false,
+        }
+    } else if key.modifiers == KeyModifiers::CONTROL {
+        key.code == KeyCode::Char('n')
+    } else {
+        false
     }
 }
 
-pub fn up_event(key: Key) -> bool {
-    match key {
-        Key::Up | Key::Char('k') | Key::Ctrl('p') => true,
-        _ => false,
+pub fn up_event(key: KeyEvent) -> bool {
+    if key.modifiers == KeyModifiers::NONE {
+        match key.code {
+            KeyCode::Up | KeyCode::Char('k') => true,
+            _ => false,
+        }
+    } else if key.modifiers == KeyModifiers::CONTROL {
+        key.code == KeyCode::Char('p')
+    } else {
+        false
     }
 }
 
-pub fn left_event(key: Key) -> bool {
-    match key {
-        Key::Left | Key::Char('h') => true,
-        _ => false,
+pub fn left_event(key: KeyEvent) -> bool {
+    if key.modifiers == KeyModifiers::NONE {
+        match key.code {
+            KeyCode::Left | KeyCode::Char('h') => true,
+            _ => false,
+        }
+    } else {
+        false
     }
 }
 
-pub fn right_event(key: Key) -> bool {
-    match key {
-        Key::Right | Key::Char('l') => true,
-        _ => false,
+pub fn right_event(key: KeyEvent) -> bool {
+    if key.modifiers == KeyModifiers::NONE {
+        match key.code {
+            KeyCode::Right | KeyCode::Char('l') => true,
+            _ => false,
+        }
+    } else {
+        false
     }
 }
 

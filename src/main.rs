@@ -10,15 +10,16 @@ extern crate log;
 // log panics to find unknown error
 extern crate log_panics;
 
+use crossterm::event::{EnableMouseCapture, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::terminal::enable_raw_mode;
+use crossterm::ExecutableCommand;
 use dirs;
 use failure::err_msg;
 use log::LevelFilter;
 use std::fs;
 use std::io;
 use std::path::Path;
-use termion::event::Key;
-use termion::raw::IntoRawMode;
-use tui::backend::TermionBackend;
+use tui::backend::CrosstermBackend;
 use tui::Terminal;
 use util::event::{Event, Events};
 
@@ -39,6 +40,16 @@ use dbus_mpris::{dbus_mpris_handler, DbusMpris};
 const FILE_NAME: &str = "Settings.toml";
 const CONFIG_DIR: &str = ".config";
 const APP_CONFIG_DIR: &str = "netease-music-tui";
+
+#[cfg(not(target_os = "windows"))]
+fn get_log_path() -> String {
+    "/var/log/ncmt.log".into()
+}
+
+#[cfg(target_os = "windows")]
+fn get_log_path() -> String {
+    "./ncmt.log".into()
+}
 
 fn main() -> Result<(), failure::Error> {
     let config_file_path = match dirs::home_dir() {
@@ -77,7 +88,7 @@ fn main() -> Result<(), failure::Error> {
         Ok(debug) => {
             if debug {
                 log_panics::init();
-                simple_logging::log_to_file("/var/log/ncmt.log", LevelFilter::Debug)?;
+                simple_logging::log_to_file(get_log_path(), LevelFilter::Debug)?;
             }
         }
         Err(e) => error!("{}", e),
@@ -106,10 +117,13 @@ fn main() -> Result<(), failure::Error> {
         }
     };
 
-    let stdout = io::stdout().into_raw_mode()?;
-    let stdout = termion::input::MouseTerminal::from(stdout);
-    let stdout = termion::screen::AlternateScreen::from(stdout);
-    let backend = TermionBackend::new(stdout);
+    let mut stdout = io::stdout();
+
+    stdout.execute(EnableMouseCapture)?;
+
+    enable_raw_mode()?;
+
+    let backend = CrosstermBackend::new(stdout);
 
     let mut terminal = Terminal::new(backend)?;
 
@@ -145,7 +159,10 @@ fn main() -> Result<(), failure::Error> {
         match events.next()? {
             Event::Input(input) => {
                 match input {
-                    Key::Char('q') => {
+                    KeyEvent {
+                        code: KeyCode::Char('q'),
+                        modifiers: KeyModifiers::NONE,
+                    } => {
                         if app.get_current_route().active_block != ActiveBlock::Search {
                             let pop_result = app.pop_navigation_stack();
                             if pop_result.is_none() {
@@ -153,7 +170,10 @@ fn main() -> Result<(), failure::Error> {
                             }
                         }
                     }
-                    Key::Ctrl('c') => {
+                    KeyEvent {
+                        code: KeyCode::Char('c'),
+                        modifiers: KeyModifiers::CONTROL,
+                    } => {
                         break;
                     }
                     _ => {

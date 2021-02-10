@@ -1,8 +1,8 @@
 use super::super::app::{ActiveBlock, App, RouteId};
 use super::common_events;
-use termion::event::Key;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-pub fn handler(key: Key, app: &mut App) {
+pub fn handler(key: KeyEvent, app: &mut App) {
     match key {
         k if common_events::left_event(k) => common_events::handle_left_event(app),
         k if common_events::down_event(k) => {
@@ -23,7 +23,10 @@ pub fn handler(key: Key, app: &mut App) {
                 djradio_list.selected_index = next_index;
             }
         }
-        Key::Char('\n') => {
+        KeyEvent {
+            code: KeyCode::Enter,
+            modifiers: KeyModifiers::NONE,
+        } => {
             if let Some(djradio_list) = &app.djradio_list.clone() {
                 if let Some(djradio) = djradio_list
                     .djradios

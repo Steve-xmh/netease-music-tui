@@ -1,8 +1,8 @@
 use super::super::app::App;
 use super::common_events;
-use termion::event::Key;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-pub fn handler(key: Key, app: &mut App) {
+pub fn handler(key: KeyEvent, app: &mut App) {
     match key {
         k if common_events::left_event(k) => common_events::handle_left_event(app),
         k if common_events::down_event(k) => {
@@ -23,7 +23,10 @@ pub fn handler(key: Key, app: &mut App) {
                 artist_albums.selected_index = next_index;
             }
         }
-        Key::Char('\n') => {
+        KeyEvent {
+            code: KeyCode::Enter,
+            modifiers: KeyModifiers::NONE,
+        } => {
             if let Some(artist_albums) = &mut app.artist_albums {
                 if let Some(selected_album) = artist_albums
                     .albums

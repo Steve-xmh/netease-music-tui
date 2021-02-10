@@ -1,8 +1,8 @@
 use super::super::app::App;
 use super::common_events;
-use termion::event::Key;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-pub fn handler(key: Key, app: &mut App) {
+pub fn handler(key: KeyEvent, app: &mut App) {
     match key {
         k if common_events::right_event(k) => common_events::handle_right_event(app),
         k if common_events::down_event(k) => {
@@ -27,7 +27,10 @@ pub fn handler(key: Key, app: &mut App) {
                 None => {}
             };
         }
-        Key::Char('\n') => {
+        KeyEvent {
+            code: KeyCode::Enter,
+            modifiers: KeyModifiers::NONE,
+        } => {
             if let (Some(playlists), Some(selected_playlist_index)) =
                 (&app.playlists, &app.selected_playlist_index)
             {
