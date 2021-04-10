@@ -42,6 +42,7 @@ pub struct PlaylistDetail {
     pub playCount: Option<i32>,
     pub creator: Option<Creator>,
     pub tracks: Vec<PlaylistTrack>,
+    pub trackIds: Vec<PlaylistTrackId>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -58,6 +59,13 @@ pub struct PlaylistTrack {
     pub id: Option<i64>,
     pub ar: Option<Vec<Artist>>,
     pub al: Option<Album>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PlaylistTrackId {
+    pub id: Option<i64>,
+    pub v: Option<i64>,
+    pub at: Option<i64>,
 }
 
 impl PartialEq for Track {

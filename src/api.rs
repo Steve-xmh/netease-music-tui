@@ -358,13 +358,11 @@ impl CloudMusic {
 
     // get playlist detail api
     pub fn playlist_detail(&self, playlist_id: &str) -> Result<PlaylistDetail, failure::Error> {
-        let url = format!("/weapi/v3/playlist/detail");
+        let url = format!("/api/v6/playlist/detail");
         let mut params = HashMap::new();
         params.insert("id".to_owned(), playlist_id.to_string());
-        params.insert("total".to_owned(), true.to_string());
-        params.insert("limit".to_owned(), 1000.to_string());
-        params.insert("offset".to_owned(), 0.to_string());
-        params.insert("n".to_owned(), 1000.to_string());
+        params.insert("n".to_owned(), 100000.to_string());
+        params.insert("s".to_owned(), 8.to_string());
 
         let result = self.post(&url, &mut params)?;
         let res = self.convert_result::<PlaylistDetailRes>(&result).unwrap();

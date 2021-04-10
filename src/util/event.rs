@@ -27,7 +27,7 @@ impl Default for Config {
     fn default() -> Config {
         Config {
             exit_key: KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL),
-            tick_rate: Duration::from_millis(250),
+            tick_rate: Duration::from_millis(1000),
         }
     }
 }

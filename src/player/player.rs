@@ -32,7 +32,7 @@ pub enum PlayerState {
 
 pub struct Player {
     // commands: Option<std::sync::mpsc::Sender<PlayerCommand>>,
-    endpoint: rodio::Device,
+    endpoint: (rodio::OutputStream, rodio::OutputStreamHandle),
     pub state: PlayerState,
     pub current: Option<Track>,
     pub sink: rodio::Sink,
@@ -48,8 +48,8 @@ impl Player {
         // F: FnOnce() -> Box<dyn Sink> + Send + 'static,
     {
         let endpoint =
-            rodio::default_output_device().expect("Failed to find default music endpoint");
-        let sink = rodio::Sink::new(&endpoint);
+            rodio::OutputStream::try_default().expect("Failed to find default music endpoint");
+        let sink = rodio::Sink::try_new(&endpoint.1).unwrap();
 
         Player {
             state: PlayerState::Stopped,
@@ -72,38 +72,42 @@ impl Player {
             }
             None => {}
         }
-
-        let buffer = NamedTempFile::new().unwrap();
-        let path = buffer.path().to_string_lossy().to_string();
-        let pathbuf = PathBuf::from(path);
-
-        let (ptx, mut prx) = oneshot::channel::<String>();
-
-        thread::spawn(move || {
-            fetch_data(&url.to_owned(), buffer, ptx).expect("error thread task");
-        });
-        if start_playing {
-            loop {
-                match prx.try_recv() {
-                    Ok(p) => match p {
-                        Some(_) => {
-                            match Track::load(pathbuf) {
-                                Ok(track) => {
-                                    let mut track = track;
-                                    self.load_track(track.clone(), start_playing);
-                                    track.resume();
-                                    self.current = Some(track);
-                                    self.state = PlayerState::Playing {};
+        let mut loaded = false;
+        while !loaded {
+            let buffer = NamedTempFile::new().unwrap();
+            let path = buffer.path().to_string_lossy().to_string();
+            let pathbuf = PathBuf::from(path);
+            let url = url.clone();
+    
+            let (ptx, mut prx) = oneshot::channel::<String>();
+            thread::spawn(move || {
+                fetch_data(&url.to_owned(), buffer, ptx).expect("error thread task");
+            });
+            if start_playing {
+                loop {
+                    match prx.try_recv() {
+                        Ok(p) => match p {
+                            Some(_) => {
+                                loaded = true;
+                                match Track::load(pathbuf) {
+                                    Ok(track) => {
+                                        let mut track = track;
+                                        self.load_track(track.clone(), start_playing);
+                                        track.resume();
+                                        self.current = Some(track);
+                                        self.state = PlayerState::Playing {};
+                                    }
+                                    Err(_) => {}
                                 }
-                                Err(_) => {}
+                                break;
                             }
-                            break;
-                        }
-                        None => {}
-                    },
-                    Err(_) => {}
+                            None => {}
+                        },
+                        Err(_) => {}
+                    }
                 }
             }
+            
         }
     }
 
@@ -121,7 +125,7 @@ impl Player {
     pub fn start(&mut self) {
         let vol = self.sink.volume();
         self.sink.stop();
-        self.sink = rodio::Sink::new(&self.endpoint);
+        self.sink = rodio::Sink::try_new(&self.endpoint.1).unwrap();
         self.set_volume(vol);
     }
 

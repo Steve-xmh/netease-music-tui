@@ -835,11 +835,11 @@ where
                     .title(Spans::from(Span::styled("Playing", get_color(highlight_state))))
                     .border_style(get_color(highlight_state)),
             )
+            .x_bounds([-90.0, 90.0])
+            .y_bounds([-90.0, 90.0])
             .paint(|ctx| {
                 ctx.draw(&app.playing_circle);
-            })
-            .x_bounds([90.0, 90.0])
-            .y_bounds([90.0, 90.0]),
+            }),
         chunks[0],
     );
 

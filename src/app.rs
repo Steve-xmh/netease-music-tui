@@ -6,7 +6,7 @@ use super::model::dj::{DjProgram, DjRadio};
 use super::model::lyric::Lyric;
 use super::model::playlist::{Playlist, Track};
 use super::player::Nplayer;
-use super::ui::circle::{Circle, CIRCLE, CIRCLE_TICK};
+use super::ui::circle::{Circle};
 
 use rand::Rng;
 use tui::layout::Rect;
@@ -336,13 +336,17 @@ impl App {
             if current_route.active_block == ActiveBlock::Playing {
                 if self.circle_flag {
                     self.playing_circle = Circle {
-                        circle: &CIRCLE,
                         color: Color::Reset,
+                        x: 50,
+                        y: 50,
+                        radius: 50,
                     }
                 } else {
                     self.playing_circle = Circle {
-                        circle: &CIRCLE_TICK,
                         color: Color::Cyan,
+                        x: 50,
+                        y: 50,
+                        radius: 50,
                     }
                 }
                 self.circle_flag = !self.circle_flag;

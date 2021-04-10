@@ -24,8 +24,7 @@ pub fn handler(key: KeyEvent, app: &mut App) {
             }
         }
         KeyEvent {
-            code: KeyCode::Char('\n'),
-
+            code: KeyCode::Enter,
             modifiers: KeyModifiers::NONE,
         } => {
             if let Some(playlists) = &app.playlist_list {
